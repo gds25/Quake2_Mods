@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "g_local.h"
 #include "m_player.h"
 
+void parasite_drain_attack(edict_t *self);
+
 
 char *ClientTeam (edict_t *ent)
 {
@@ -908,22 +910,71 @@ int cmd_cast_spell(edict_t *ent)
 	char		*s;
 
 	s = gi.args();
-	if (Q_stricmp(s, "BFG10K") == 0)
+	ent->client->casting = 0;
+	if (ent->client->pers.mana < 50)
 	{
-		ent->client->casting = 0;
-		if (ent->client->pers.mana < 50)
-		{
-			gi.centerprintf(ent,"Fizzzle.... not enough mana");
-			return 1;
-		}
-		VectorCopy(ent->client->v_angle, angle);
-		AngleVectors(ent->client->v_angle, forward, right, NULL);
-		P_ProjectSource(ent->client, ent->s.origin, offset, forward, right, start);
-
-		fire_bfg(ent, ent->s.origin, forward, 100, 100, 25);
-		ent->client->pers.mana -= 50;
+		gi.centerprintf(ent,"Fizzzle.... not enough mana");
 		return 1;
 	}
+	VectorCopy(ent->client->v_angle, angle);
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+	P_ProjectSource(ent->client, ent->s.origin, offset, forward, right, start);
+
+	fire_bfg(ent, ent->s.origin, forward, 100, 500, 25);
+	ent->client->pers.mana -= 50;
+	return 1;
+	return 0;
+}
+
+int cmd_cast_invul(edict_t *ent)
+{
+	vec3_t	forward, right;
+	vec3_t	start;
+	vec3_t	offset;
+	vec3_t angle;
+	char		*s;
+
+	s = gi.args();
+	ent->client->casting = 0;
+	if (ent->client->pers.mana < 100)
+	{
+		gi.centerprintf(ent, "Fizzzle.... not enough mana");
+		return 1;
+	}
+
+	Cmd_Give_f(ent);
+	Cmd_Use_f(ent);
+	//Cmd_Give_f("item_invulnerability");
+	//Use_Invulnerability(ent, "item_invulnerability");
+
+	ent->client->pers.mana -= 100;
+	return 1;
+	return 0;
+}
+
+int cmd_cast_quad(edict_t *ent)
+{
+	vec3_t	forward, right;
+	vec3_t	start;
+	vec3_t	offset;
+	vec3_t angle;
+	char		*s;
+
+	s = gi.args();
+	ent->client->casting = 0;
+	if (ent->client->pers.mana < 70)
+	{
+		gi.centerprintf(ent, "Fizzzle.... not enough mana");
+		return 1;
+	}
+
+	Cmd_Give_f(ent);
+	Cmd_Use_f(ent);
+	//Cmd_Give_f(ent, "item_quad");
+	//Use_Quad(ent, "item_quad");
+
+	ent->client->pers.mana -= 70;
+	return 1;
 	return 0;
 }
 
@@ -934,6 +985,68 @@ void cmd_cast_begin(edict_t *ent)
 	gi.cprintf(ent, PRINT_HIGH, "Swish and...\n");
 	ent->client->casttime = level.time;
 	ent->client->casting = 1;
+}
+
+int cmd_cast_drain(edict_t *ent)
+{
+	vec3_t end, forward;
+	trace_t tr;
+
+	//s = gi.args();
+	ent->client->casting = 0;
+	if (ent->client->pers.mana < 20)
+	{
+		gi.centerprintf(ent, "Fizzzle.... not enough mana");
+		return 1;
+	}
+
+	VectorCopy(ent->s.origin, end);
+	AngleVectors (ent->client->v_angle, forward, NULL, NULL);
+	end[ 0 ] = end[ 0 ] +forward[ 0 ] *250;
+	end[ 1 ] = end[ 1 ] +forward[ 1 ] *250;
+	end[ 2 ] = end[ 2 ] +forward[ 2 ] *250;
+
+	tr = gi.trace (ent->s.origin, NULL, NULL, end, ent, MASK_SHOT);
+	if(tr.ent != NULL)
+	{
+		ent->enemy = tr.ent;
+		parasite_drain_attack(ent);
+	}
+
+	ent->client->pers.mana -= 20;
+	return 1;
+	return 0;
+}
+
+int Cmd_Push_f (edict_t *ent)
+{
+	vec3_t  start;
+	vec3_t  forward;
+	vec3_t  end;
+	trace_t tr;
+
+	//s = gi.args();
+	ent->client->casting = 0;
+	if (ent->client->pers.mana < 30)
+	{
+		gi.centerprintf(ent, "Fizzzle.... not enough mana");
+		return 1;
+	}
+
+	VectorCopy(ent ->s.origin, start); // Copy your location
+	start[2] += ent ->viewheight; // vector for start is at your height of view
+	AngleVectors(ent ->client ->v_angle, forward, NULL, NULL); // Angles
+	VectorMA(start, 8192, forward, end); // How far will the line go?
+	tr = gi.trace(start, NULL, NULL, end, ent, MASK_SHOT); // Trace the line
+	if (tr.ent && ((tr.ent ->svflags & SVF_MONSTER) || (tr.ent ->client) ) ) // Trace the line
+	{
+		VectorScale(forward, 5000, forward); //Where to hit? Edit 5000 towhatever you like the push to be
+		VectorAdd(forward, tr.ent ->velocity, tr.ent ->velocity); // Adding velocity vectors
+	}
+
+	ent->client->pers.mana -= 30;
+	return 1;
+	return 0;
 }
 
 /*
@@ -1037,6 +1150,16 @@ void ClientCommand (edict_t *ent)
 		Cmd_PlayerList_f(ent);
 	else if (Q_stricmp(cmd, "cast") == 0)
 		cmd_cast_begin(ent);
+	else if (Q_stricmp(cmd, "castspell") == 0)
+		cmd_cast_spell(ent);
+	else if (Q_stricmp(cmd, "castinvul") == 0)
+		cmd_cast_invul(ent);
+	else if (Q_stricmp(cmd, "castquad") == 0)
+		cmd_cast_quad(ent);
+	else if (Q_stricmp(cmd, "castdrain") == 0)
+		cmd_cast_drain(ent);
+	else if (Q_stricmp(cmd, "castpush") == 0)
+		Cmd_Push_f(ent);
 	else	// anything that doesn't match a command will be a chat
 		Cmd_Say_f (ent, false, true);
 }

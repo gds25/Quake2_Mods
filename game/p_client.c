@@ -631,6 +631,10 @@ void InitClientPersistant (gclient_t *client)
 	client->pers.mana = 0;
 	client->pers.mana_max = 100;
 	client->pers.mana_regen = 0.05;
+
+	client->pers.xp = 0;
+	client->pers.levelup_xp = 20;
+	client->pers.curr_level = 1;
 }
 
 
@@ -663,16 +667,23 @@ void SaveClientData (void)
 			continue;
 		game.clients[i].pers.health = ent->health;
 		game.clients[i].pers.max_health = ent->max_health;
+		//game.clients[i].pers.curr_level = ent->curr_level;
+		//game.clients[i].pers.xp = ent->xp;
+		//game.clients[i].pers.levelup_xp = ent->levelup_xp;
 		game.clients[i].pers.savedFlags = (ent->flags & (FL_GODMODE|FL_NOTARGET|FL_POWER_ARMOR));
 		if (coop->value)
 			game.clients[i].pers.score = ent->client->resp.score;
 	}
 }
 
+// here
 void FetchClientEntData (edict_t *ent)
 {
 	ent->health = ent->client->pers.health;
 	ent->max_health = ent->client->pers.max_health;
+	//ent->curr_level = ent->client->pers.curr_level;
+	//ent->xp = ent->client->pers.xp;
+	//ent->levelup_xp = ent->client->pers.levelup_xp;
 	ent->flags |= ent->client->pers.savedFlags;
 	if (coop->value)
 		ent->client->resp.score = ent->client->pers.score;

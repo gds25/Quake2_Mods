@@ -865,6 +865,8 @@ typedef struct
 
 	float		mana, mana_max, mana_regen;
 
+	float		xp, levelup_xp, curr_level;
+
 } client_persistant_t;
 
 // client data that stays across deathmatch respawns
@@ -1115,6 +1117,8 @@ struct edict_s
 	// common data blocks
 	moveinfo_t		moveinfo;
 	monsterinfo_t	monsterinfo;
+
+	//float xp, levelup_xp, curr_level;
 };
 
 void P_ProjectSource(gclient_t *client, vec3_t point, vec3_t distance, vec3_t forward, vec3_t right, vec3_t result);

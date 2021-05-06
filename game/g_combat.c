@@ -91,6 +91,7 @@ Killed
 */
 void Killed (edict_t *targ, edict_t *inflictor, edict_t *attacker, int damage, vec3_t point)
 {
+	//gi.centerprintf(attacker, "kill");
 	if (targ->health < -999)
 		targ->health = -999;
 
@@ -120,9 +121,25 @@ void Killed (edict_t *targ, edict_t *inflictor, edict_t *attacker, int damage, v
 	{
 		targ->touch = NULL;
 		monster_death_use (targ);
+
+		if (attacker){
+			attacker->client->pers.xp += 10;
+			if (attacker->client->pers.xp >= attacker->client->pers.levelup_xp) {
+				attacker->client->pers.curr_level++;
+				attacker->client->pers.xp = 0;
+				attacker->client->pers.levelup_xp *= 2;
+				gi.centerprintf(attacker, "Level Up!\nLevel: %i \n XP needed to level up: %i", (int)attacker->client->pers.curr_level, (int)attacker->client->pers.levelup_xp);
+			}
+			gi.cprintf(attacker, PRINT_HIGH, "Current XP: %i / %i \n", (int)attacker->client->pers.xp, (int)attacker->client->pers.levelup_xp);
+		}
+
 	}
 
 	targ->die (targ, inflictor, attacker, damage, point);
+
+	// here
+	
+	//gi.cprintf(attacker, PRINT_HIGH, "Current XP: %i / %i", (int)attacker->client->pers.xp, (int)attacker->client->pers.levelup_xp);
 }
 
 

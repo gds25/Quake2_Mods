@@ -349,6 +349,9 @@ void fire_blaster (edict_t *self, vec3_t start, vec3_t dir, int damage, int spee
 
 	VectorNormalize (dir);
 
+	//gi.centerprintf(self, "In mod");
+	//gi.cprintf(self, PRINT_HIGH, "In mod /n");
+
 	bolt = G_Spawn();
 	bolt->svflags = SVF_DEADMONSTER;
 	// yes, I know it looks weird that projectiles are deadmonsters
