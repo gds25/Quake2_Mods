@@ -894,7 +894,7 @@ void fire_bfg (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed, f
 	bfg->movetype = MOVETYPE_FLYMISSILE;
 	bfg->clipmask = MASK_SHOT;
 	bfg->solid = SOLID_BBOX;
-	bfg->s.effects |= EF_BFG | EF_ANIM_ALLFAST;
+	bfg->s.effects |= EF_HYPERBLASTER | EF_ANIM_ALLFAST;
 	VectorClear (bfg->mins);
 	VectorClear (bfg->maxs);
 	bfg->s.modelindex = gi.modelindex ("sprites/s_bfg1.sp2");
@@ -916,4 +916,35 @@ void fire_bfg (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed, f
 		check_dodge (self, bfg->s.origin, dir, speed);
 
 	gi.linkentity (bfg);
+}
+
+
+void fire_melee (edict_t *self, vec3_t start, vec3_t aim, int reach, int damage, int kick, int quiet, int mod)
+{
+	vec3_t		forward, right, up;
+	vec3_t		v;
+	vec3_t		point;
+	trace_t		tr;
+
+	vectoangles (aim, v);                  
+	AngleVectors (v, forward, right, up);  
+	VectorNormalize (forward);               
+	VectorMA(start, reach, forward, point); 
+
+	tr = gi.trace(start, NULL, NULL, point, self, MASK_SHOT);
+
+	if(tr.ent -> takedamage == DAMAGE_YES || tr.ent -> takedamage == DAMAGE_AIM)
+	{
+		T_Damage (tr.ent, self, self, vec3_origin, tr.ent -> s.origin, vec3_origin, damage, kick, DAMAGE_ENERGY, mod);
+	}
+	else
+	{
+		VectorScale (tr.plane.normal, 256, point);
+		gi.WriteByte (svc_temp_entity);
+		gi.WriteByte (TE_SPARKS); //make sparks when miss target
+		gi.WritePosition (tr.endpos);
+		gi.WriteDir (point);
+		gi.multicast (tr.endpos, MULTICAST_PVS);
+
+	}
 }

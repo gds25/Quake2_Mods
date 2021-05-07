@@ -898,6 +898,9 @@ struct gclient_s
 	qboolean	showhelp;
 	qboolean	showhelpicon;
 
+	//here
+	qboolean	inshop;
+
 	int			ammo_index;
 
 	int			buttons;

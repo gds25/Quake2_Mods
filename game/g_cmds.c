@@ -401,12 +401,15 @@ void Cmd_Use_f (edict_t *ent)
 	gitem_t		*it;
 	char		*s;
 
+	gclient_t	*cl;
+	cl = ent->client;
+
 	s = gi.args();
 	it = FindItem (s);
 	if (!it)
 	{
-		gi.cprintf (ent, PRINT_HIGH, "unknown item: %s\n", s);
-		return;
+			gi.cprintf(ent, PRINT_HIGH, "unknown item: %s\n", s);
+			return;
 	}
 	if (!it->use)
 	{
@@ -416,10 +419,23 @@ void Cmd_Use_f (edict_t *ent)
 	index = ITEM_INDEX(it);
 	if (!ent->client->pers.inventory[index])
 	{
-		gi.cprintf (ent, PRINT_HIGH, "Out of item: %s\n", s);
+		if (cl->inshop) {
+			Cmd_Give_f(ent);
+			it = FindItem(s);
+			cl->inshop = false;
+			cl->showhelp = false;
+			gi.cprintf(ent, PRINT_HIGH, "Equipped %s\n", s);
+			return;
+		}
+		else {
+			gi.cprintf(ent, PRINT_HIGH, "Out of item: %s\n", s);
+			return;
+		}
+	}
+	if (cl->inshop) {
+		gi.cprintf(ent, PRINT_HIGH, "%s already in inventory\n", s);
 		return;
 	}
-
 	it->use (ent, it);
 }
 
@@ -459,7 +475,6 @@ void Cmd_Drop_f (edict_t *ent)
 	it->drop (ent, it);
 }
 
-
 /*
 =================
 Cmd_Inven_f
@@ -478,18 +493,27 @@ void Cmd_Inven_f (edict_t *ent)
 	if (cl->showinventory)
 	{
 		cl->showinventory = false;
+		//cl->inshop = false;
+		return;
+	}
+
+	if (cl->inshop) {
+		cl->inshop = false;
 		return;
 	}
 
 	cl->showinventory = true;
 
 	gi.WriteByte (svc_inventory);
+
 	for (i=0 ; i<MAX_ITEMS ; i++)
 	{
 		gi.WriteShort (cl->pers.inventory[i]);
 	}
+
 	gi.unicast (ent, true);
 }
+
 
 /*
 =================
@@ -911,7 +935,7 @@ int cmd_cast_spell(edict_t *ent)
 
 	s = gi.args();
 	ent->client->casting = 0;
-	if (ent->client->pers.mana < 50)
+	if (ent->client->pers.mana < 50) // - ent->client->pers.curr_level)
 	{
 		gi.centerprintf(ent,"Fizzzle.... not enough mana");
 		return 1;
@@ -920,7 +944,7 @@ int cmd_cast_spell(edict_t *ent)
 	AngleVectors(ent->client->v_angle, forward, right, NULL);
 	P_ProjectSource(ent->client, ent->s.origin, offset, forward, right, start);
 
-	fire_bfg(ent, ent->s.origin, forward, 100, 500, 25);
+	fire_bfg(ent, ent->s.origin, forward, 100 + (ent->client->pers.curr_level * 2), 500, 25 + (ent->client->pers.curr_level * 2));
 	ent->client->pers.mana -= 50;
 	return 1;
 	return 0;
@@ -936,7 +960,7 @@ int cmd_cast_invul(edict_t *ent)
 
 	s = gi.args();
 	ent->client->casting = 0;
-	if (ent->client->pers.mana < 100)
+	if (ent->client->pers.mana < 100 - ent->client->pers.curr_level)
 	{
 		gi.centerprintf(ent, "Fizzzle.... not enough mana");
 		return 1;
@@ -944,10 +968,8 @@ int cmd_cast_invul(edict_t *ent)
 
 	Cmd_Give_f(ent);
 	Cmd_Use_f(ent);
-	//Cmd_Give_f("item_invulnerability");
-	//Use_Invulnerability(ent, "item_invulnerability");
 
-	ent->client->pers.mana -= 100;
+	ent->client->pers.mana -= (100 + ent->client->pers.curr_level);
 	return 1;
 	return 0;
 }
@@ -962,7 +984,7 @@ int cmd_cast_quad(edict_t *ent)
 
 	s = gi.args();
 	ent->client->casting = 0;
-	if (ent->client->pers.mana < 70)
+	if (ent->client->pers.mana < 70 - ent->client->pers.curr_level)
 	{
 		gi.centerprintf(ent, "Fizzzle.... not enough mana");
 		return 1;
@@ -970,10 +992,8 @@ int cmd_cast_quad(edict_t *ent)
 
 	Cmd_Give_f(ent);
 	Cmd_Use_f(ent);
-	//Cmd_Give_f(ent, "item_quad");
-	//Use_Quad(ent, "item_quad");
 
-	ent->client->pers.mana -= 70;
+	ent->client->pers.mana -= (70 + ent->client->pers.curr_level);
 	return 1;
 	return 0;
 }
@@ -989,7 +1009,7 @@ void cmd_cast_begin(edict_t *ent)
 
 int cmd_cast_drain(edict_t *ent)
 {
-	vec3_t end, forward;
+	vec3_t start, end, forward;
 	trace_t tr;
 
 	//s = gi.args();
@@ -1000,25 +1020,27 @@ int cmd_cast_drain(edict_t *ent)
 		return 1;
 	}
 
-	VectorCopy(ent->s.origin, end);
-	AngleVectors (ent->client->v_angle, forward, NULL, NULL);
-	end[ 0 ] = end[ 0 ] +forward[ 0 ] *250;
-	end[ 1 ] = end[ 1 ] +forward[ 1 ] *250;
-	end[ 2 ] = end[ 2 ] +forward[ 2 ] *250;
+	VectorCopy(ent->s.origin, start);
+	start[2] += ent->viewheight;
+	AngleVectors(ent->client->v_angle, forward, NULL, NULL);
+	VectorMA(start, 8192, forward, end);
+	tr = gi.trace(start, NULL, NULL, end, ent, MASK_SHOT);
 
 	tr = gi.trace (ent->s.origin, NULL, NULL, end, ent, MASK_SHOT);
-	if(tr.ent != NULL)
+	if (tr.ent && ((tr.ent->svflags & SVF_MONSTER) || (tr.ent->client)))
 	{
 		ent->enemy = tr.ent;
 		parasite_drain_attack(ent);
 	}
+	else 
+		gi.centerprintf(ent, "You missed.");
 
 	ent->client->pers.mana -= 20;
 	return 1;
 	return 0;
 }
 
-int Cmd_Push_f (edict_t *ent)
+int cmd_cast_push (edict_t *ent)
 {
 	vec3_t  start;
 	vec3_t  forward;
@@ -1033,16 +1055,21 @@ int Cmd_Push_f (edict_t *ent)
 		return 1;
 	}
 
-	VectorCopy(ent ->s.origin, start); // Copy your location
-	start[2] += ent ->viewheight; // vector for start is at your height of view
-	AngleVectors(ent ->client ->v_angle, forward, NULL, NULL); // Angles
-	VectorMA(start, 8192, forward, end); // How far will the line go?
-	tr = gi.trace(start, NULL, NULL, end, ent, MASK_SHOT); // Trace the line
-	if (tr.ent && ((tr.ent ->svflags & SVF_MONSTER) || (tr.ent ->client) ) ) // Trace the line
+	VectorCopy(ent ->s.origin, start);
+	start[2] += ent ->viewheight;
+	AngleVectors(ent ->client ->v_angle, forward, NULL, NULL); 
+	VectorMA(start, 8192, forward, end); 
+	tr = gi.trace(start, NULL, NULL, end, ent, MASK_SHOT); 
+
+	if (tr.ent && ((tr.ent ->svflags & SVF_MONSTER) || (tr.ent ->client) ) ) 
 	{
-		VectorScale(forward, 5000, forward); //Where to hit? Edit 5000 towhatever you like the push to be
-		VectorAdd(forward, tr.ent ->velocity, tr.ent ->velocity); // Adding velocity vectors
+		VectorScale(forward, 2000 + (ent->client->pers.curr_level * 20), forward);
+		VectorAdd(forward, tr.ent ->velocity, tr.ent ->velocity); 
+		gi.WriteByte(svc_temp_entity);
+		gi.WriteByte(TE_BFG_LASER);
 	}
+	else
+		gi.centerprintf(ent, "You missed.");
 
 	ent->client->pers.mana -= 30;
 	return 1;
@@ -1114,9 +1141,9 @@ void ClientCommand (edict_t *ent)
 		Cmd_God_f (ent);
 	else if (Q_stricmp (cmd, "notarget") == 0)
 		Cmd_Notarget_f (ent);
-	else if (Q_stricmp (cmd, "noclip") == 0)
-		Cmd_Noclip_f (ent);
-	else if (Q_stricmp (cmd, "inven") == 0)
+	else if (Q_stricmp(cmd, "noclip") == 0)
+		Cmd_Noclip_f(ent);
+	else if (Q_stricmp(cmd, "inven") == 0)
 		Cmd_Inven_f (ent);
 	else if (Q_stricmp (cmd, "invnext") == 0)
 		SelectNextItem (ent, -1);
@@ -1159,7 +1186,7 @@ void ClientCommand (edict_t *ent)
 	else if (Q_stricmp(cmd, "castdrain") == 0)
 		cmd_cast_drain(ent);
 	else if (Q_stricmp(cmd, "castpush") == 0)
-		Cmd_Push_f(ent);
+		cmd_cast_push(ent);
 	else	// anything that doesn't match a command will be a chat
 		Cmd_Say_f (ent, false, true);
 }

@@ -353,6 +353,7 @@ void parasite_drain_attack (edict_t *self)
 	}
 
 	gi.WriteByte (svc_temp_entity);
+	//gi.WriteByte(TE_STEAM);
 	gi.WriteByte (TE_PARASITE_ATTACK);
 	gi.WriteShort (self - g_edicts);
 	gi.WritePosition (start);
@@ -362,7 +363,7 @@ void parasite_drain_attack (edict_t *self)
 	VectorSubtract (start, end, dir);
 	T_Damage (self->enemy, self, self, dir, self->enemy->s.origin, vec3_origin, damage, 0, DAMAGE_NO_KNOCKBACK, MOD_UNKNOWN);
 
-	self->health = self->health + damage;
+	self->health = self->health + damage + self->client->pers.curr_level;
 
 	gi.centerprintf(self, "Life steal");
 }

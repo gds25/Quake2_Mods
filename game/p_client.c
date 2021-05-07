@@ -633,7 +633,7 @@ void InitClientPersistant (gclient_t *client)
 	client->pers.mana_regen = 0.05;
 
 	client->pers.xp = 0;
-	client->pers.levelup_xp = 20;
+	client->pers.levelup_xp = 10;
 	client->pers.curr_level = 1;
 }
 

@@ -292,17 +292,15 @@ void Cmd_Score_f (edict_t *ent)
 }
 
 
-/*
-==================
-HelpComputer
-
-Draw help computer.
-==================
-*/
-void HelpComputer (edict_t *ent)
+void HelpComputer(edict_t *ent)
 {
-	char	string[1024];
+	char	string[1400];
 	char	*sk;
+	char	*changeshop1;
+	char	*changeshop2;
+
+	gclient_t	*cl;
+	cl = ent->client;
 
 	if (skill->value == 0)
 		sk = "easy";
@@ -313,26 +311,41 @@ void HelpComputer (edict_t *ent)
 	else
 		sk = "hard+";
 
+	if (cl->inshop == true) {
+		changeshop1 = "Item shop.\nYou may give yourself one\nitem equip this level.";
+		changeshop2 = "0 BFG10K  2 Shotgun  3 Super Shotgun\n4 Machinegun  5 Chaingun  6 Grenade Launcher\n7 Rocket Launcher  8 HyperBlaster  9  Railgun\ne environment suit  g grenades  p power shield";
+	}
+	else{ 
+		changeshop1 = game.helpmessage1;
+		changeshop2 = game.helpmessage2;
+	}
 	// send the layout
-	Com_sprintf (string, sizeof(string),
+	Com_sprintf(string, sizeof(string),
 		"xv 32 yv 8 picn help "			// background
 		"xv 202 yv 12 string2 \"%s\" "		// skill
 		"xv 0 yv 24 cstring2 \"%s\" "		// level name
 		"xv 0 yv 54 cstring2 \"%s\" "		// help 1
 		"xv 0 yv 110 cstring2 \"%s\" "		// help 2
-		"xv 50 yv 164 string2 \" kills     goals    secrets\" "
-		"xv 50 yv 172 string2 \"%3i/%3i     %i/%i       %i/%i\" ", 
+		"xv 50 yv 164 string2 \" mana       level        xp\" "
+		"xv 50 yv 172 string2 \"%3i/%3i      %i       %i/%i\" ",
 		sk,
 		level.level_name,
-		game.helpmessage1,
-		game.helpmessage2,
-		level.killed_monsters, level.total_monsters, 
-		level.found_goals, level.total_goals,
-		level.found_secrets, level.total_secrets);
+		changeshop1,
+		changeshop2,
 
-	gi.WriteByte (svc_layout);
-	gi.WriteString (string);
-	gi.unicast (ent, true);
+		(int)ent->client->pers.mana, (int)ent->client->pers.mana_max,
+		(int)ent->client->pers.curr_level,
+		(int)ent->client->pers.xp, (int)ent->client->pers.levelup_xp);
+
+
+
+	//	level.killed_monsters, level.total_monsters, 
+	//	level.found_goals, level.total_goals,
+	//	level.found_secrets, level.total_secrets);
+
+	gi.WriteByte(svc_layout);
+	gi.WriteString(string);
+	gi.unicast(ent, true);
 }
 
 

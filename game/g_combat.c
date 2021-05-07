@@ -29,6 +29,11 @@ Returns true if the inflictor can directly damage the target.  Used for
 explosions and melee attacks.
 ============
 */
+
+
+void Cmd_Shop_f(edict_t *ent);
+
+
 qboolean CanDamage (edict_t *targ, edict_t *inflictor)
 {
 	vec3_t	dest;
@@ -92,6 +97,15 @@ Killed
 void Killed (edict_t *targ, edict_t *inflictor, edict_t *attacker, int damage, vec3_t point)
 {
 	//gi.centerprintf(attacker, "kill");
+
+	gclient_t	*cl;
+	cl = attacker->client;
+
+	// test this
+	int num = (rand() % 5);
+	if (num == 0)
+		SP_item_health_small(targ);
+
 	if (targ->health < -999)
 		targ->health = -999;
 
@@ -129,10 +143,23 @@ void Killed (edict_t *targ, edict_t *inflictor, edict_t *attacker, int damage, v
 				attacker->client->pers.xp = 0;
 				attacker->client->pers.levelup_xp *= 2;
 				gi.centerprintf(attacker, "Level Up!\nLevel: %i \n XP needed to level up: %i", (int)attacker->client->pers.curr_level, (int)attacker->client->pers.levelup_xp);
+				
+				if ((int)attacker->client->pers.curr_level % 3 == 0) {
+					cl->inshop = true;
+					Cmd_Help_f(attacker);
+					//cl->showinventory = true;
+				}
 			}
 			gi.cprintf(attacker, PRINT_HIGH, "Current XP: %i / %i \n", (int)attacker->client->pers.xp, (int)attacker->client->pers.levelup_xp);
 		}
 
+
+		//	SpawnItem(targ, FindItem("Body Armor"));
+		//else if (num == 1)
+		//	SpawnItem(targ, FindItem("Health"));
+
+		//SP_item_health_small(targ);
+		//Drop_Item(targ, FindItem("Health"));
 	}
 
 	targ->die (targ, inflictor, attacker, damage, point);
