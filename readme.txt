@@ -1,4 +1,4 @@
-Quake 2 Fantasy Mod - Located in fantasymod branch
+Quake 2 Fantasy Mod - Located in fantasy_mod branch
 
 Final Deliverables:
  - Change weapons over to fantasy weapons (daggers, swords, bows, etc) - only managed to make melee weapons
