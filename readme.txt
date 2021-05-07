@@ -1,4 +1,15 @@
+Quake 2 Fantasy Mod - Located in fantasymod branch
 
+Final Deliverables:
+ - Change weapons over to fantasy weapons (daggers, swords, bows, etc) - only managed to make melee weapons
+ - Enemies should also be using fantasy weapons
+ - XP / Level Up System
+ - Magic system with at least 5 learnable spells - bfg spell, quad damage spell, invincibility spell, life steal spell, push spell
+ - Loot drops / Shopkeeper - monsters have a 20% chance to drop health pack; every 3 level ups the shops opens and you can equip one weapon
+
+
+
+---------------
 This is the complete source code for Quake 2, version 3.19, buildable with
 visual C++ 6.0.  The linux version should be buildable, but we haven't
 tested it for the release.
