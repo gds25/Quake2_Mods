@@ -1,11 +1,12 @@
-Quake 2 Fantasy Mod - Located in fantasy_mod branch
+#Quake 2 Fantasy Mod
+##Located in fantasy_mod branch
 
-Final Deliverables:
- - Change weapons over to fantasy weapons (daggers, swords, bows, etc) - only managed to make melee weapons
+Current Mods:
+ - Change weapons over to fantasy weapons (daggers, swords) - melee weapons only
  - Enemies should also be using fantasy weapons
  - XP / Level Up System
  - Magic system with at least 5 learnable spells - bfg spell, quad damage spell, invincibility spell, life steal spell, push spell
- - Loot drops / Shopkeeper - monsters have a 20% chance to drop health pack; every 3 level ups the shops opens and you can equip one weapon
+ - Loot drops / Shopkeeper - monsters have a 20% chance to drop health pack; every 3 level ups the shop opens and you can equip one weapon
 
 
 
